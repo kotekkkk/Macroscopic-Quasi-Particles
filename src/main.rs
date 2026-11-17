@@ -90,9 +90,9 @@ fn find_acceleration(system: &ParticleSystem, current_particle: usize)->[f64;2]{
     let pos_next = neighbours[1].u;
     let rot_next = neighbours[1].theta;
 
-    //EOM for p from Hamilyonian
+    //EOM for p from Hamiltonian
     let lin_momentum = -v*system.linear_damping-system.spring*(2.0*pos_n-pos_prev-pos_next)+3.0*system.dipole.powf(2.0)*(((rot_n-rot_prev).cos()-3.0*rot_n.cos()*rot_prev.cos())/((system.spacing + pos_n-pos_prev).powf(4.0))-((rot_next-rot_n).cos()-3.0*rot_n.cos()*rot_next.cos())/((system.spacing + pos_next-pos_n).powf(4.0)));
-    //EOM for L from Hamilyonian
+    //EOM for L from Hamiltonian
     let rot_momentum = -omega*system.rot_damping-system.dipole*system.field*(rot_n-system.field_angle).sin()-3.0*system.dipole.powf(2.0)*(((rot_next-rot_n).sin()+3.0*rot_n.sin()*rot_next.cos())/((system.spacing+pos_next-pos_n).powf(3.0))-((rot_n-rot_prev).sin()-3.0*rot_n.sin()*rot_prev.cos())/((system.spacing+pos_n-pos_prev).powf(3.0)));
 
     return [lin_momentum/system.mass,rot_momentum/system.moi];
@@ -101,19 +101,19 @@ fn find_acceleration(system: &ParticleSystem, current_particle: usize)->[f64;2]{
 
 fn main()  -> Result<(), Box<dyn std::error::Error>>{
     //Currently doing everything manually...
-    let mut New_System = ParticleSystem::new(
+    let mut new_system = ParticleSystem::new(
         1.0,
         1.0,
         5.0,
-        10gi.0,
+        10.0,
         1.0,
         0.1,
         10.0,
         0.0,
         0.0,
         vec![]);
-    New_System.populate(8);
-    for p in &mut New_System.particles{
+    new_system.populate(8);
+    for p in &mut new_system.particles{
         p.u=((4.0* (3.14159265358979) *(p.id as f64))/8.0).cos()*0.1
     }
 
@@ -121,14 +121,14 @@ fn main()  -> Result<(), Box<dyn std::error::Error>>{
     let t=0.01;
     let length = 8.0;
     for _ in 0..((length/t) as usize) {
-        New_System=New_System.step(t);
+        new_system=new_system.step(t);
 
         history.push(ParticleFrame {
-            positions: New_System.particles.iter()
+            positions: new_system.particles.iter()
                 .map(|p| p.u)
                 .collect(),
 
-            angles: New_System.particles.iter()
+            angles: new_system.particles.iter()
                 .map(|p| p.theta)
                 .collect(),
 });
