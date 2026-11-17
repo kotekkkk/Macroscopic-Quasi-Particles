@@ -1,0 +1,12 @@
+[package]
+name = "magnets"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+plotters = { version = "0.3.7", features = [
+    "bitmap_backend",
+    "bitmap_encoder",
+    "line_series",
+    "ttf"
+] }
