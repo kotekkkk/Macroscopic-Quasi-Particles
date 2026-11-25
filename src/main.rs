@@ -46,6 +46,32 @@ impl ParticleSystem {
         ]
     }
 
+    fn get_linear_contributions(&self, id:usize) -> f64{
+        let mut F=0.0;
+        let q = &self.particles[id];
+        for p in &self.particles{
+            if p.id==id{
+                continue;
+            }
+            let magnetic_cont=0.5*3.0*(self.spacing*(((id as f64)-(p.id as f64)))+q.u-p.u).signum()*(self.spacing*(((id as f64)-(p.id as f64)))+q.u-p.u).powf(-4.0)*((q.theta-p.theta).cos()-3.0*q.theta.cos()*p.theta.cos());
+
+            F+=magnetic_cont;
+        }
+        return F;
+    }
+    fn get_angular_contributions(&self, id:usize) -> f64{
+        let mut F=0.0;
+        let q = &self.particles[id];
+        for p in &self.particles{
+            if p.id==id{
+                continue;
+            }
+            let magnetic_cont=-0.5*((self.spacing*(((id as f64)-(p.id as f64)))+q.u-p.u).abs().powf(-3.0)*(-((q.theta-p.theta).sin())+3.0*(p.theta.cos())*(q.theta.sin())));
+            F+=magnetic_cont;
+        }
+        return F;
+    }
+
     fn step(&self,timestep:f64) -> Self { //Retuns an updated system one timestep in the future
         let mut updated = self.particles.clone();
 
@@ -91,10 +117,11 @@ fn find_acceleration(system: &ParticleSystem, current_particle: usize)->[f64;2]{
     let rot_next = neighbours[1].theta;
 
     //EOM for p from Hamiltonian
-    let lin_momentum = -v*system.linear_damping-system.spring*(2.0*pos_n-pos_prev-pos_next)+3.0*system.dipole.powf(2.0)*(((rot_n-rot_prev).cos()-3.0*rot_n.cos()*rot_prev.cos())/((system.spacing + pos_n-pos_prev).powf(4.0))-((rot_next-rot_n).cos()-3.0*rot_n.cos()*rot_next.cos())/((system.spacing + pos_next-pos_n).powf(4.0)));
+    //let lin_momentum = -v*system.linear_damping-system.spring*(2.0*pos_n-pos_prev-pos_next)+3.0*system.dipole.powf(2.0)*(((rot_n-rot_prev).cos()-3.0*rot_n.cos()*rot_prev.cos())/((system.spacing + pos_n-pos_prev).powf(4.0))-((rot_next-rot_n).cos()-3.0*rot_n.cos()*rot_next.cos())/((system.spacing + pos_next-pos_n).powf(4.0)));
+    let lin_momentum = -v*system.linear_damping-system.spring*(2.0*pos_n-pos_prev-pos_next)+system.get_linear_contributions(current_particle);
     //EOM for L from Hamiltonian
-    let rot_momentum = -omega*system.rot_damping-system.dipole*system.field*(rot_n-system.field_angle).sin()-3.0*system.dipole.powf(2.0)*(((rot_next-rot_n).sin()+3.0*rot_n.sin()*rot_next.cos())/((system.spacing+pos_next-pos_n).powf(3.0))-((rot_n-rot_prev).sin()-3.0*rot_n.sin()*rot_prev.cos())/((system.spacing+pos_n-pos_prev).powf(3.0)));
-
+    //let rot_momentum = -omega*system.rot_damping-system.dipole*system.field*(rot_n-system.field_angle).sin()-3.0*system.dipole.powf(2.0)*(((rot_next-rot_n).sin()+3.0*rot_n.sin()*rot_next.cos())/((system.spacing+pos_next-pos_n).powf(3.0))-((rot_n-rot_prev).sin()-3.0*rot_n.sin()*rot_prev.cos())/((system.spacing+pos_n-pos_prev).powf(3.0)));
+    let rot_momentum = -omega*system.rot_damping-system.dipole*system.field*(rot_n-system.field_angle).sin()+system.get_angular_contributions(current_particle);
     return [lin_momentum/system.mass,rot_momentum/system.moi];
 
 }
@@ -108,7 +135,7 @@ fn main()  -> Result<(), Box<dyn std::error::Error>>{
         10.0,
         1.0,
         0.1,
-        10.0,
+        100.0,
         0.0,
         0.0,
         vec![]);
